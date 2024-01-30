@@ -1,0 +1,21 @@
+{
+  "name": "tmoon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "run-script-os",
+    "dev:win32": "call .\\scripts\\win32\\dev.bat"
+  },
+  "author": "RedHolms",
+  "license": "ISC",
+  "dependencies": {
+    "Complex": "^3.0.0",
+    "run-script-os": "^1.1.6",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/complex": "^3.0.34",
+    "ts-node-dev": "^2.0.0"
+  }
+}

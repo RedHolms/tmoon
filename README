@@ -1,0 +1,13 @@
+So I wanna make development for MoonLoader much better and convenient.  
+I come with idea to make TypeScript, but with Lua instead of JS  
+Currently this project only has an interface to LuaJIT compiled scripts
+
+The final goal is to make fullstack of tools for nice and clean MoonLoader development
+
+Roadmap:
+  completed - LuaJIT compiled scripts interface
+  wip       - Simplest Lua compiler (as base for TLua compiler)
+  in future - TLua specification
+  in future - TLua compiler
+  in future - MoonLoader development enviroment
+  in future - Code obfuscating
