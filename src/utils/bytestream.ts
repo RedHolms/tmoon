@@ -14,7 +14,7 @@ export class ByteStream {
     this.m_p = 0;
     this.m_size = 0;
 
-    if (!data) {
+    if (data === undefined) {
       data = Buffer.alloc(16);
     } else {
       this.m_size = data.length;

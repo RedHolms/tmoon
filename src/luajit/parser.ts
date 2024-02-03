@@ -1,58 +1,58 @@
 import Complex from "complex";
 
-import { ByteStream } from "../utils/bytestream";
-import { Instruction } from "./code";
-import { Upvalue } from "./upvalues";
 import { Prototype, PrototypeDebugInfo, PrototypeLocalDebugInfo } from "./prototype";
 import { GenericConstant, GenericConstantType } from "./constants";
-import { bitCast, normalizeNumberSign } from "../utils/numbers";
 import { Table, TableValue, TableValueType } from "./tables";
-import { getOpcodeInfo } from "./opcodes";
 import { Script, ScriptFlags } from "./script";
+import { getOpcodeInfo } from "./opcodes";
+import { Instruction } from "./code";
+import { Upvalue } from "./upvalues";
+import { bitCast, normalizeNumberSign } from "../utils/numbers";
+import { ByteStream } from "../utils/bytestream";
 
 export class ScriptParser {
-  private scr: Script;
-  private bs: ByteStream;
-  private stack: Prototype[];
+  private m_s: Script;
+  private m_bs: ByteStream;
+  private m_stack: Prototype[];
 
   constructor(outScript: Script, data: Buffer) {
-    this.scr = outScript;
-    this.bs = new ByteStream(data);
-    this.stack = [];
+    this.m_s = outScript;
+    this.m_bs = new ByteStream(data);
+    this.m_stack = [];
   }
 
   private hasDebug(): boolean {
-    return !(this.scr.flags & ScriptFlags.StripDebug);
+    return !(this.m_s.flags & ScriptFlags.StripDebug);
   }
 
   private parseHeader() {
-    this.scr.bytecodeVersion = this.bs.readu8();
+    this.m_s.bytecodeVersion = this.m_bs.readu8();
 
-    if (this.scr.bytecodeVersion !== 2)
+    if (this.m_s.bytecodeVersion !== 2)
       throw Error("Only 2nd version of bytecode is supported");
 
-    const flags = this.bs.readULEB128();
-    this.scr.flags = flags;
+    const flags = this.m_bs.readULEB128();
+    this.m_s.flags = flags;
 
     if (this.hasDebug()) {
-      const length = this.bs.readULEB128();
-      this.scr.chunkname = this.bs.readString(length);
+      const length = this.m_bs.readULEB128();
+      this.m_s.chunkname = this.m_bs.readString(length);
     }
   }
 
   private parseTableValue(): TableValue {
-    const type = this.bs.readULEB128();
+    const type = this.m_bs.readULEB128();
 
     if (type >= TableValueType.String) {
       const length = type - TableValueType.String;
-      const string = this.bs.readString(length);
+      const string = this.m_bs.readString(length);
       return new TableValue(TableValueType.String, string);
     } else if (type === TableValueType.Int64) {
-      let value = BigInt(this.bs.readULEB128());
-      value |= BigInt(this.bs.readULEB128()) << 32n;
+      let value = BigInt(this.m_bs.readULEB128());
+      value |= BigInt(this.m_bs.readULEB128()) << 32n;
       return new TableValue(type, normalizeNumberSign(value, 64));
     } else if (type === TableValueType.Int32) {
-      const value = BigInt(this.bs.readULEB128());
+      const value = BigInt(this.m_bs.readULEB128());
       return new TableValue(type, normalizeNumberSign(value, 32));
     } else if (type === TableValueType.True) {
       return new TableValue(type, "true");
@@ -68,8 +68,8 @@ export class ScriptParser {
   private parseTable(): Table {
     const table = new Table();
 
-    const arrayCount = this.bs.readULEB128();
-    const dictCount = this.bs.readULEB128();
+    const arrayCount = this.m_bs.readULEB128();
+    const dictCount = this.m_bs.readULEB128();
 
     for (let i = 0; i < arrayCount; ++i) {
       const value = this.parseTableValue();
@@ -87,30 +87,30 @@ export class ScriptParser {
 
   private parsePrototype() {
     /* prototype length */
-    void this.bs.readULEB128();
+    void this.m_bs.readULEB128();
 
-    const prototype = new Prototype(this.scr);
+    const prototype = new Prototype(this.m_s);
     
-    prototype.flags = this.bs.readu8();
-    prototype.argsCount = this.bs.readu8();
-    prototype.maxSlot = this.bs.readu8();
+    prototype.flags = this.m_bs.readu8();
+    prototype.argsCount = this.m_bs.readu8();
+    prototype.maxSlot = this.m_bs.readu8();
 
-    const uvcount = this.bs.readu8();
-    const gkcount = this.bs.readULEB128();
-    const nkcount = this.bs.readULEB128();
-    const cdcount = this.bs.readULEB128();
+    const uvcount = this.m_bs.readu8();
+    const gkcount = this.m_bs.readULEB128();
+    const nkcount = this.m_bs.readULEB128();
+    const cdcount = this.m_bs.readULEB128();
 
     let dbgsize = 0;
     if (this.hasDebug()) {
-      dbgsize = this.bs.readULEB128();
+      dbgsize = this.m_bs.readULEB128();
 
       prototype.debugInfo = new PrototypeDebugInfo();
-      prototype.debugInfo.firstLine = this.bs.readULEB128();
-      prototype.debugInfo.linesCount = this.bs.readULEB128();
+      prototype.debugInfo.firstLine = this.m_bs.readULEB128();
+      prototype.debugInfo.linesCount = this.m_bs.readULEB128();
     }
 
     for (let i = 0; i < cdcount; ++i) {
-      const value = this.bs.readu32();
+      const value = this.m_bs.readu32();
       const opcode = value & 0xFF;
       const info = getOpcodeInfo(opcode);
 
@@ -132,44 +132,44 @@ export class ScriptParser {
     }
 
     for (let i = 0; i < uvcount; ++i) {
-      const value = this.bs.readu16();
+      const value = this.m_bs.readu16();
       prototype.upvalues.push(new Upvalue(value));
     }
 
     for (let i = 0; i < gkcount; ++i) {
-      const type = this.bs.readULEB128();
+      const type = this.m_bs.readULEB128();
       let constant;
 
       if (type >= GenericConstantType.String) {
         const length = type - GenericConstantType.String;
-        const value = this.bs.readString(length);
+        const value = this.m_bs.readString(length);
         constant = new GenericConstant(GenericConstantType.String, value);
       } else if (type === GenericConstantType.Complex) {
-        let real = BigInt(this.bs.readULEB128());
-        real |= BigInt(this.bs.readULEB128()) << 32n;
+        let real = BigInt(this.m_bs.readULEB128());
+        real |= BigInt(this.m_bs.readULEB128()) << 32n;
 
-        let imag = BigInt(this.bs.readULEB128());
-        imag |= BigInt(this.bs.readULEB128()) << 32n;
+        let imag = BigInt(this.m_bs.readULEB128());
+        imag |= BigInt(this.m_bs.readULEB128()) << 32n;
 
         constant = new GenericConstant(
           GenericConstantType.Complex,
           new Complex(bitCast("uint64", real, "double"), bitCast("uint64", imag, "double"))
         );
       } else if (type === GenericConstantType.Uint64) {
-        let value = BigInt(this.bs.readULEB128());
-        value |= BigInt(this.bs.readULEB128()) << 32n;
+        let value = BigInt(this.m_bs.readULEB128());
+        value |= BigInt(this.m_bs.readULEB128()) << 32n;
 
         constant = new GenericConstant(type, value);
       } else if (type === GenericConstantType.Int64) {
-        let value = BigInt(this.bs.readULEB128());
-        value |= BigInt(this.bs.readULEB128()) << 32n;
+        let value = BigInt(this.m_bs.readULEB128());
+        value |= BigInt(this.m_bs.readULEB128()) << 32n;
 
         constant = new GenericConstant(type, normalizeNumberSign(value, 64));
       } else if (type === GenericConstantType.Table) {
         const table = this.parseTable();
         constant = new GenericConstant(GenericConstantType.Table, table);
       } else if (type === GenericConstantType.Child) {
-        const child = this.stack.pop();
+        const child = this.m_stack.pop();
 
         if (child === undefined)
           throw Error("Prototype stack underflow");
@@ -184,11 +184,11 @@ export class ScriptParser {
     }
 
     for (let i = 0; i < nkcount; ++i) {
-      const [ isDouble, first ] = this.bs.readULEB128_33();
+      const [ isDouble, first ] = this.m_bs.readULEB128_33();
       let value;
 
       if (isDouble) {
-        const second = this.bs.readULEB128();
+        const second = this.m_bs.readULEB128();
         value = bitCast("uint64", first | (second << 32), "double");
       } else {
         value = normalizeNumberSign(first, 4);
@@ -207,14 +207,14 @@ export class ScriptParser {
         lineNumSize = 4;
 
       for (let i = 0; i < cdcount; ++i) {
-        debugInfo.lines.push(this.bs.readu(lineNumSize));
+        debugInfo.lines.push(this.m_bs.readu(lineNumSize));
       }
 
       for (let i = 0; i < uvcount; ++i) {
         let name = "";
 
         for (;;) {
-          const byte = this.bs.readu8();
+          const byte = this.m_bs.readu8();
           if (byte === 0)
             break;
           name += String.fromCharCode(byte);
@@ -225,7 +225,7 @@ export class ScriptParser {
 
       while (true) {
         let name = "";
-        let n = this.bs.readu8();
+        let n = this.m_bs.readu8();
         
         if (n < 7) {
           if (n === 0)
@@ -233,14 +233,14 @@ export class ScriptParser {
         } else {
           for (;;) {
             name += String.fromCharCode(n);
-            n = this.bs.readu8();
+            n = this.m_bs.readu8();
             if (n === 0)
               break;
           }
         }
 
-        const startpc = this.bs.readULEB128();
-        const len = this.bs.readULEB128();
+        const startpc = this.m_bs.readULEB128();
+        const len = this.m_bs.readULEB128();
         
         const local = new PrototypeLocalDebugInfo();
 
@@ -277,13 +277,13 @@ export class ScriptParser {
       }
     }
 
-    this.stack.push(prototype);
+    this.m_stack.push(prototype);
   }
 
   parse() {
-    this.bs.seek(0);
+    this.m_bs.seek(0);
 
-    const magic = this.bs.readString(3);
+    const magic = this.m_bs.readString(3);
     
     if (magic !== "\x1BLJ")
       throw Error("Invalid magic");
@@ -291,16 +291,16 @@ export class ScriptParser {
     this.parseHeader();
 
     while (true) {
-      if (this.bs.readu8() === 0)
+      if (this.m_bs.readu8() === 0)
         break;
-      this.bs.skip(-1);
+      this.m_bs.skip(-1);
 
       this.parsePrototype();
     }
 
-    if (this.stack.length === 0)
+    if (this.m_stack.length === 0)
       throw Error("Corrupted bytecode: no global chunk");
 
-    this.scr.global = this.stack.pop() as Prototype;
+    this.m_s.global = this.m_stack.pop() as Prototype;
   }
 };

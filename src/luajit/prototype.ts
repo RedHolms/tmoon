@@ -1,7 +1,7 @@
-import { Code } from "./code";
 import { GenericConstant } from "./constants";
-import { Script } from "./script";
 import { Upvalue } from "./upvalues";
+import { Script } from "./script";
+import { Code } from "./code";
 
 export enum PrototypeFlags {
   None          = 0,
@@ -66,10 +66,12 @@ export class PrototypeDebugInfo {
       if (beginpc > address)
         break;
 
-      if (address < endpc && index === 0) {
-        return local.name;
+      if (address < endpc) {
+        if (index === 0)
+          return local.name;
+        else
+          --index;
       }
-      --index;
     }
     
     return "";

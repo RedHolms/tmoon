@@ -37,25 +37,25 @@ export class TableDictionaryNode {
 };
 
 export class Table {
-  private list: TableValue[];
+  private m_list: TableValue[];
 
   // Map will only make it worse
-  private dict: TableDictionaryNode[];
+  private m_dict: TableDictionaryNode[];
 
   constructor() {
-    this.list = [];
-    this.dict = [];
+    this.m_list = [];
+    this.m_dict = [];
   }
   
   private tryGetList(index: number | bigint): TableValue | undefined {
     if (typeof index === "bigint")
       index = Number(index);
 
-    return this.list.at(index);
+    return this.m_list.at(index);
   }
 
   private tryGetDict(key: TableValue): TableValue | undefined {
-    for (const node of this.dict) {
+    for (const node of this.m_dict) {
       if (
         node.key.type === key.type &&
         node.key.value === key.value
@@ -68,11 +68,11 @@ export class Table {
   }
 
   array(): TableValue[] {
-    return this.list;
+    return this.m_list;
   }
 
   dictionary(): TableDictionaryNode[] {
-    return this.dict;
+    return this.m_dict;
   }
 
   get(index: number): TableValue | undefined;
@@ -105,7 +105,7 @@ export class Table {
 
     // Is there already node with this key
     let existingNode: TableDictionaryNode | undefined = undefined;
-    for (const node of this.dict) {
+    for (const node of this.m_dict) {
       if (node.key.value === key.value) {
         existingNode = node;
         break;
@@ -116,19 +116,19 @@ export class Table {
       existingNode.value = value;
     } else {
       const newNode = new TableDictionaryNode(key, value);
-      this.dict.push(newNode);
+      this.m_dict.push(newNode);
     }
   }
 
   delete(key: TableValue) {
-    for (let i = 0; i < this.dict.length; ++i) {
-      const node = this.dict[i];
+    for (let i = 0; i < this.m_dict.length; ++i) {
+      const node = this.m_dict[i];
 
       if (
         node.key.type === key.type &&
         node.key.value === key.value
       ) {
-        this.dict.splice(i, 1);
+        this.m_dict.splice(i, 1);
         break;
       }
     }
@@ -145,19 +145,19 @@ export class Table {
     else
       value = new TableValue(valueOrType, realValue as TableRealValue);
 
-    if (this.list.length - 1 > index) {
-      const prevLength = this.list.length;
-      this.list.length = index + 1;
+    if (this.m_list.length - 1 > index) {
+      const prevLength = this.m_list.length;
+      this.m_list.length = index + 1;
 
-      for (let i = prevLength; i < this.list.length - 1; ++i) {
-        this.list[i] = new TableValue(TableValueType.Nil, "nil");
+      for (let i = prevLength; i < this.m_list.length - 1; ++i) {
+        this.m_list[i] = new TableValue(TableValueType.Nil, "nil");
       }
     }
 
-    this.list[index] = value;
+    this.m_list[index] = value;
   }
 
   pop(index: number) {
-    this.list.splice(index, 1);
+    this.m_list.splice(index, 1);
   }
 };

@@ -1,10 +1,11 @@
 import Complex from "complex";
-import { ByteStream } from "../utils/bytestream";
-import { GenericConstantType } from "./constants";
-import { getOpcodeInfo } from "./opcodes";
-import { Prototype, PrototypeDebugInfo } from "./prototype";
-import { Script, ScriptFlags } from "./script";
+
 import { Table, TableValue, TableValueType } from "./tables";
+import { Prototype, PrototypeDebugInfo } from "./prototype";
+import { GenericConstantType } from "./constants";
+import { Script, ScriptFlags } from "./script";
+import { getOpcodeInfo } from "./opcodes";
+import { ByteStream } from "../utils/bytestream";
 import { bitCast } from "../utils/numbers";
 
 export class ScriptSaver {
