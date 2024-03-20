@@ -1,14 +1,11 @@
 {
   "name": "tmoon",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "author": "RedHolms",
   "scripts": {
-    "dev": "run-script-os",
+    "dev": "ts-node-dev src/index.ts",
     "dev:win32": "call .\\scripts\\win32\\dev.bat"
   },
-  "author": "RedHolms",
-  "license": "ISC",
   "dependencies": {
     "Complex": "^3.0.0",
     "run-script-os": "^1.1.6",
