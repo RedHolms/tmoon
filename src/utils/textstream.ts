@@ -12,7 +12,7 @@ const isspace = generateMask(/\s/);
 const isalpha = generateMask(/[a-zA-Z_]/);
 const isdec = generateMask(/[0-9]/);
 const isoct = generateMask(/[0-7]/);
-const ishex = generateMask(/[0-9A-F]/);
+const ishex = generateMask(/[0-9A-Fa-f]/);
 const isbin = generateMask(/[0-1]/);
 const isnewln = generateMask(/\n/);
 

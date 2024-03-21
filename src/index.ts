@@ -1,4 +1,4 @@
-import { Lexer } from "./small-lua/lexer";
+import { Lexer, LexerError } from "./small-lua/lexer";
 import { TextStream } from "./utils/textstream";
 
 // const string = `1234567890
@@ -40,9 +40,21 @@ while true do
   leftSide..rightSide;
   SomeTable.SomeIndex;
   varargFunction(...);
+
+  local MYVAR_HEX = 0xFF;
+  local MYVAR_DEC = 1234;
 end`
 );
 
 const lex = new Lexer(ts);
-lex.tokenize();
-console.log(lex.getResult());
+
+try {
+  lex.tokenize();
+  console.log(lex.getResult());
+} catch(error) {
+  if (!(error instanceof LexerError))
+    throw error;
+
+  console.log("%s at %d:%d", error.message, error.line, error.column);
+}
+

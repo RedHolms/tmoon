@@ -63,46 +63,46 @@ export enum TokenID {
 };
 
 const KEYWORDS_NAMES: Map<string, TokenID> = new Map([
-  [ "and",      TokenID.AND     ],
-  [ "break",    TokenID.BREAK   ],
-  [ "do",       TokenID.DO      ],
-  [ "else",     TokenID.ELSE    ],
-  [ "elseif",   TokenID.ELSEIF  ],
-  [ "end",      TokenID.END     ],
-  [ "false",    TokenID.FALSE   ],
-  [ "for",      TokenID.FOR     ],
-  [ "function", TokenID.FUNCTION],
-  [ "if",       TokenID.IF      ],
-  [ "in",       TokenID.IN      ],
-  [ "local",    TokenID.LOCAL   ],
-  [ "nil",      TokenID.NIL     ],
-  [ "not",      TokenID.NOT     ],
-  [ "or",       TokenID.OR      ],
-  [ "repeat",   TokenID.REPEAT  ],
-  [ "return",   TokenID.RETURN  ],
-  [ "then",     TokenID.THEN    ],
-  [ "true",     TokenID.TRUE    ],
-  [ "until",    TokenID.UNTIL   ],
-  [ "while",    TokenID.WHILE   ],
+  [ "and",      TokenID.AND      ],
+  [ "break",    TokenID.BREAK    ],
+  [ "do",       TokenID.DO       ],
+  [ "else",     TokenID.ELSE     ],
+  [ "elseif",   TokenID.ELSEIF   ],
+  [ "end",      TokenID.END      ],
+  [ "false",    TokenID.FALSE    ],
+  [ "for",      TokenID.FOR      ],
+  [ "function", TokenID.FUNCTION ],
+  [ "if",       TokenID.IF       ],
+  [ "in",       TokenID.IN       ],
+  [ "local",    TokenID.LOCAL    ],
+  [ "nil",      TokenID.NIL      ],
+  [ "not",      TokenID.NOT      ],
+  [ "or",       TokenID.OR       ],
+  [ "repeat",   TokenID.REPEAT   ],
+  [ "return",   TokenID.RETURN   ],
+  [ "then",     TokenID.THEN     ],
+  [ "true",     TokenID.TRUE     ],
+  [ "until",    TokenID.UNTIL    ],
+  [ "while",    TokenID.WHILE    ],
 ]);
 
 const OTHER_TOKENS_MAP: Map<string, TokenID> = new Map([
-  [ '+', TokenID.PLUS     ],
-  [ '-', TokenID.MINUS    ],
-  [ '*', TokenID.STAR     ],
-  [ '/', TokenID.SLASH    ],
-  [ '%', TokenID.PERCENT  ],
-  [ '^', TokenID.ACCENT   ],
-  [ '#', TokenID.HASH     ],
-  [ '(', TokenID.PAR_OPEN ],
-  [ ')', TokenID.PAR_CLOSE],
-  [ '{', TokenID.CBR_OPEN ],
-  [ '}', TokenID.CBR_CLOSE],
-  [ '[', TokenID.SBR_OPEN ],
-  [ ']', TokenID.SBR_CLOSE],
-  [ ';', TokenID.SEMICOLON],
-  [ ':', TokenID.COLON    ],
-  [ ',', TokenID.COMMA    ],
+  [ '+', TokenID.PLUS      ],
+  [ '-', TokenID.MINUS     ],
+  [ '*', TokenID.STAR      ],
+  [ '/', TokenID.SLASH     ],
+  [ '%', TokenID.PERCENT   ],
+  [ '^', TokenID.ACCENT    ],
+  [ '#', TokenID.HASH      ],
+  [ '(', TokenID.PAR_OPEN  ],
+  [ ')', TokenID.PAR_CLOSE ],
+  [ '{', TokenID.CBR_OPEN  ],
+  [ '}', TokenID.CBR_CLOSE ],
+  [ '[', TokenID.SBR_OPEN  ],
+  [ ']', TokenID.SBR_CLOSE ],
+  [ ';', TokenID.SEMICOLON ],
+  [ ':', TokenID.COLON     ],
+  [ ',', TokenID.COMMA     ],
 ]);
 
 export class Token {
@@ -281,6 +281,41 @@ export class Lexer {
     return new Token(keywordId, line, column);
   }
 
+  private readNumber(): Token {
+    const ts = this.m_ts;
+    const line = ts.line();
+    const column = ts.column();
+
+    let isHex = false;
+    let numberString = "";
+    numberString += ts.read1();
+    
+    if (numberString == '0') {
+      if (ts.is(/[xX]/)) {
+        isHex = true;
+        numberString += ts.read1();
+
+        // al least 1 digit expected
+        if (!ts.isHex())
+          this.throw("Invalid number (expected hex)");
+      }
+      else if (!ts.isDec())
+        this.throw("Invalid number (expected decimal)");
+    }
+
+    const isDigit = 
+      isHex ? () => { return ts.isHex(); }
+            : () => { return ts.isDec(); }
+
+    while (isDigit())
+      numberString += ts.read1();
+
+    if (ts.isAlpha())
+      this.throw("Invalid number");
+
+    return new NumberToken(NumberType.INTEGER, Number(numberString), line, column);
+  }
+
   private handleOtherTokens(): boolean {
     const ts = this.m_ts;
     const rs = this.m_res;
@@ -402,6 +437,11 @@ export class Lexer {
       // Multiline string
       if (ts.is(/\[\[/)) {
         this.m_res.push(this.readMultilineString());
+        continue;
+      }
+
+      if (ts.isDec()) {
+        this.m_res.push(this.readNumber());
         continue;
       }
 
